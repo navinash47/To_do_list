@@ -1,39 +1,37 @@
-from flask import Flask, request, jsonify
+from suggestion_service import create_app, clean_suggestion_text, get_matching_score
+from flask import request, jsonify
 import mysql.connector
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
-app = Flask(__name__)
-
-db_config = {
-    'host': os.getenv('DB_HOST'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
-    'database': os.getenv('DB_NAME')
-}
+app = create_app()
 
 def get_db_connection():
-    return mysql.connector.connect(**db_config)
+    return mysql.connector.connect(**app.config['MYSQL_CONFIG'])
 
 @app.route('/suggestions', methods=['GET'])
 def get_suggestions():
-    query = request.args.get('q', '')
+    query = clean_suggestion_text(request.args.get('q', ''))
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     try:
         cursor.execute("""
-            SELECT task_text 
+            SELECT task_text, frequency 
             FROM task_suggestions 
             WHERE task_text LIKE %s 
             ORDER BY frequency DESC 
-            LIMIT 5
+            LIMIT 10
         """, (f"%{query}%",))
         suggestions = cursor.fetchall()
-        return jsonify(suggestions), 200
+        
+        # Sort suggestions based on matching score
+        scored_suggestions = [
+            {**sugg, 'score': get_matching_score(query, sugg['task_text'])}
+            for sugg in suggestions
+        ]
+        scored_suggestions.sort(key=lambda x: (-x['score'], -x['frequency']))
+        
+        return jsonify(scored_suggestions[:5]), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
@@ -43,7 +41,7 @@ def get_suggestions():
 @app.route('/suggestions/add', methods=['POST'])
 def add_suggestion():
     data = request.get_json()
-    task_text = data.get('task_text')
+    task_text = clean_suggestion_text(data.get('task_text'))
 
     conn = get_db_connection()
     cursor = conn.cursor()

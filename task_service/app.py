@@ -1,23 +1,13 @@
-from flask import Flask, request, jsonify
+from task_service import create_app, calculate_time_remaining, format_task_response
+from flask import request, jsonify
 import mysql.connector
 import uuid
 from datetime import datetime
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
-app = Flask(__name__)
-
-db_config = {
-    'host': os.getenv('DB_HOST'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
-    'database': os.getenv('DB_NAME')
-}
+app = create_app()
 
 def get_db_connection():
-    return mysql.connector.connect(**db_config)
+    return mysql.connector.connect(**app.config['MYSQL_CONFIG'])
 
 @app.route('/tasks', methods=['POST'])
 def create_task():
@@ -28,7 +18,7 @@ def create_task():
     reminder = data.get('reminder')
 
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
     try:
         task_id = str(uuid.uuid4())
@@ -38,7 +28,12 @@ def create_task():
             (task_id, user_id, task_text, deadline, reminder)
         )
         conn.commit()
-        return jsonify({'task_id': task_id, 'message': 'Task created successfully'}), 201
+
+        # Fetch the created task
+        cursor.execute("SELECT * FROM tasks WHERE task_id = %s", (task_id,))
+        task = cursor.fetchone()
+        return jsonify(format_task_response(task)), 201
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
@@ -52,18 +47,12 @@ def get_tasks(user_id):
 
     try:
         cursor.execute("""
-            SELECT *, 
-            CASE 
-                WHEN deadline IS NOT NULL 
-                THEN TIMESTAMPDIFF(SECOND, NOW(), deadline) 
-                ELSE NULL 
-            END as time_remaining
-            FROM tasks 
+            SELECT * FROM tasks 
             WHERE user_id = %s AND is_completed = FALSE
             ORDER BY created_at DESC
         """, (user_id,))
         tasks = cursor.fetchall()
-        return jsonify(tasks), 200
+        return jsonify([format_task_response(task) for task in tasks]), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:

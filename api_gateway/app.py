@@ -8,8 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__)
-CORS(app)
+app = create_app()
 
 # Service URLs
 AUTH_SERVICE_URL = 'http://localhost:5001'

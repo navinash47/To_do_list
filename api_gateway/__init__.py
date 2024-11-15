@@ -1,10 +1,9 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 import jwt
 from functools import wraps
-from flask import request, jsonify
 
 def create_app():
     load_dotenv()
@@ -15,14 +14,13 @@ def create_app():
     # Configure app
     app.config.update(
         SECRET_KEY=os.getenv('JWT_SECRET_KEY'),
-        AUTH_SERVICE_URL='http://localhost:5001',
-        TASK_SERVICE_URL='http://localhost:5002',
-        SUGGESTION_SERVICE_URL='http://localhost:5003'
+        AUTH_SERVICE_URL=os.getenv('AUTH_SERVICE_URL', 'http://localhost:5001'),
+        TASK_SERVICE_URL=os.getenv('TASK_SERVICE_URL', 'http://localhost:5002'),
+        SUGGESTION_SERVICE_URL=os.getenv('SUGGESTION_SERVICE_URL', 'http://localhost:5003')
     )
     
     return app
 
-# Utility functions and decorators for API gateway
 def token_required(f):
     """Decorator to check valid JWT token."""
     @wraps(f)
@@ -34,7 +32,11 @@ def token_required(f):
         
         try:
             token = token.split()[1]  # Remove 'Bearer ' prefix
-            jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
+            jwt.decode(
+                token, 
+                os.getenv('JWT_SECRET_KEY'), 
+                algorithms=['HS256']
+            )
         except jwt.ExpiredSignatureError:
             return jsonify({'error': 'Token has expired'}), 401
         except jwt.InvalidTokenError:

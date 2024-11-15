@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
-from auth_service import create_app, generate_password_hash, check_password_hash
+from __init__ import create_app, generate_password_hash, check_password_hash
 
 
 load_dotenv()

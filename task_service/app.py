@@ -1,4 +1,4 @@
-from task_service import create_app, calculate_time_remaining, format_task_response
+from __init__ import create_app, calculate_time_remaining, format_task_response
 from flask import request, jsonify
 import mysql.connector
 import uuid

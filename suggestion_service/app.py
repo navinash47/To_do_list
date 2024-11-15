@@ -1,4 +1,4 @@
-from suggestion_service import create_app, clean_suggestion_text, get_matching_score
+from __init__ import create_app, clean_suggestion_text, get_matching_score
 from flask import request, jsonify
 import mysql.connector
 

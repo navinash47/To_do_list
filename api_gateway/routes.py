@@ -1,4 +1,4 @@
-from api_gateway import create_app, token_required, handle_service_error
+from __init__ import create_app, token_required, handle_service_error
 from flask import request, jsonify
 import requests
 
@@ -60,8 +60,41 @@ def get_tasks(user_id):
     except requests.exceptions.ConnectionError:
         return jsonify({'error': 'Task service unavailable'}), 503
 
-# ... rest of your routes ...
+@app.route('/tasks/complete/<task_id>', methods=['PUT'])
+@token_required
+def complete_task(task_id):
+    try:
+        response = requests.put(
+            f"{app.config['TASK_SERVICE_URL']}/tasks/complete/{task_id}"
+        )
+        return handle_service_error(response)
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Task service unavailable'}), 503
 
+@app.route('/tasks/history/<user_id>', methods=['GET'])
+@token_required
+def get_task_history(user_id):
+    try:
+        response = requests.get(
+            f"{app.config['TASK_SERVICE_URL']}/tasks/history/{user_id}"
+        )
+        return handle_service_error(response)
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Task service unavailable'}), 503
+
+@app.route('/tasks/<task_id>', methods=['PUT'])
+@token_required
+def update_task(task_id):
+    try:
+        response = requests.put(
+            f"{app.config['TASK_SERVICE_URL']}/tasks/{task_id}", 
+            json=request.get_json()
+        )
+        return handle_service_error(response)
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Task service unavailable'}), 503
+
+# Suggestion routes
 @app.route('/suggestions', methods=['GET'])
 @token_required
 def get_suggestions():
@@ -72,7 +105,4 @@ def get_suggestions():
         )
         return handle_service_error(response)
     except requests.exceptions.ConnectionError:
-        return jsonify({'error': 'Suggestion service unavailable'}), 503
-
-if __name__ == '__main__':
-    app.run(port=5000)
+        return jsonify({'error': 'Suggestion service unavailable'}), 503 

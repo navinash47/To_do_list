@@ -45,21 +45,18 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
     const name = document.getElementById('name').value;
     const gender = document.getElementById('gender').value;
 
-    // Validate passwords match
-    if (password !== confirmPassword) {
-        showError('Passwords do not match');
-        return;
-    }
+    // Clear previous error messages
+    clearErrors();
 
-    // Validate password strength
-    if (!isPasswordStrong(password)) {
-        showError('Password must be at least 8 characters long and contain letters, numbers, and special characters');
+    // Validate form
+    if (!validateRegistrationForm(email, password, confirmPassword, name, gender)) {
         return;
     }
 
     try {
         const button = e.target.querySelector('button');
         button.classList.add('loading');
+        button.textContent = 'Registering...';
 
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
@@ -77,18 +74,97 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
         const data = await response.json();
 
         if (response.ok) {
-            // Show success message and redirect to login
-            alert('Registration successful! Please login.');
-            window.location.href = 'login.html';
+            // Show success message
+            showSuccess('Registration successful! Redirecting to login...');
+            
+            // Redirect to login page after 2 seconds
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
         } else {
-            showError(data.error);
+            showError(data.error || 'Registration failed');
         }
     } catch (error) {
+        console.error('Registration error:', error);
         showError('An error occurred during registration');
     } finally {
+        const button = e.target.querySelector('button');
         button.classList.remove('loading');
+        button.textContent = 'Register';
     }
 });
+
+function validateRegistrationForm(email, password, confirmPassword, name, gender) {
+    let isValid = true;
+
+    // Email validation
+    if (!isValidEmail(email)) {
+        showError('Please enter a valid email address', 'email');
+        isValid = false;
+    }
+
+    // Password validation
+    if (!isPasswordStrong(password)) {
+        showError('Password must be at least 8 characters long and contain letters, numbers, and special characters', 'password');
+        isValid = false;
+    }
+
+    // Confirm password
+    if (password !== confirmPassword) {
+        showError('Passwords do not match', 'confirmPassword');
+        isValid = false;
+    }
+
+    // Name validation
+    if (name.trim().length < 2) {
+        showError('Please enter a valid name', 'name');
+        isValid = false;
+    }
+
+    // Gender validation
+    if (!gender) {
+        showError('Please select a gender', 'gender');
+        isValid = false;
+    }
+
+    return isValid;
+}
+
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function showError(message, fieldId = null) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = message;
+
+    if (fieldId) {
+        const field = document.getElementById(fieldId);
+        const existingError = field.parentElement.querySelector('.error-message');
+        if (existingError) {
+            existingError.remove();
+        }
+        field.parentElement.appendChild(errorDiv);
+    } else {
+        const form = document.querySelector('form');
+        form.insertBefore(errorDiv, form.firstChild);
+    }
+}
+
+function showSuccess(message) {
+    const successDiv = document.createElement('div');
+    successDiv.className = 'success-message';
+    successDiv.textContent = message;
+    
+    const form = document.querySelector('form');
+    form.insertBefore(successDiv, form.firstChild);
+}
+
+function clearErrors() {
+    document.querySelectorAll('.error-message').forEach(error => error.remove());
+    document.querySelectorAll('.success-message').forEach(success => success.remove());
+}
 
 // Password strength checker
 function isPasswordStrong(password) {
@@ -146,28 +222,6 @@ document.getElementById('confirmPassword')?.addEventListener('input', (e) => {
         e.target.setCustomValidity('');
     }
 });
-
-// Error display helper
-function showError(message) {
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.textContent = message;
-    
-    // Remove any existing error messages
-    const existingError = document.querySelector('.error-message');
-    if (existingError) {
-        existingError.remove();
-    }
-    
-    // Add the new error message
-    const form = document.querySelector('form');
-    form.insertBefore(errorDiv, form.firstChild);
-    
-    // Remove error after 5 seconds
-    setTimeout(() => {
-        errorDiv.remove();
-    }, 5000);
-}
 
 // Logout functionality
 document.getElementById('logoutBtn')?.addEventListener('click', () => {

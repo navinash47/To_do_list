@@ -160,4 +160,76 @@ button {
 
 button:hover {
     background: var(--secondary-color);
+}
+
+/* Form Styles */
+select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: white;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.auth-box h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+
+.auth-box p {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.auth-box a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.auth-box a:hover {
+    text-decoration: underline;
+}
+
+/* Password strength indicator */
+.password-strength {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.strength-weak {
+    color: #dc3545;
+}
+
+.strength-medium {
+    color: #ffc107;
+}
+
+.strength-strong {
+    color: #28a745;
+}
+
+/* Form validation styles */
+input:invalid {
+    border-color: #dc3545;
+}
+
+input:valid {
+    border-color: #28a745;
+}
+
+/* Loading indicator */
+.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+button.loading::after {
+    content: '...';
 } 
